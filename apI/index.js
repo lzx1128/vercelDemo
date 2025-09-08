@@ -1,29 +1,11 @@
-import express from "express";
-import { createServer } from "http";
+import express from 'express';
 
 const app = express();
 
-// Routes
-app.get("/", (req, res) => {
-    res.end("Hello Node.js");  // 修改这里
+// 示例路由
+app.get('/api', (req, res) => {
+  res.send('Hello from Vercel Node.js!');
 });
 
-app.get("/api/item/:slug", (req, res) => {
-    const { slug } = req.params;
-    res.end(`Item: ${slug}`);
-});
-
-// 404 Handler
-app.use((req, res) => {
-    res.status(404).end("Not Found");
-});
-
-// Start the server
-const PORT = process.env.PORT || 3100;
-const server = createServer(app);
-
-server.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
-
+// 必须导出为无服务器函数
 export default app;
