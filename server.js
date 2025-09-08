@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 静态文件托管 - 确保路径正确
-const publicPath = path.join(__dirname, '../public');
+const publicPath = path.join(__dirname, '/public');
 app.use(express.static(publicPath));
 
 // 模拟数据库
