@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo API Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app-container">
+    <header class="app-header">
+        <div class="header-content">
+            <h1>Todo API Dashboard</h1>
+            <p class="subtitle">Manage your todos with this modern REST API</p>
+        </div>
+        <div class="header-actions">
+            <button id="refresh-btn" class="btn btn-primary">
+                <span class="icon">🔄</span> Refresh
+            </button>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <section class="api-controls">
+            <div class="control-group">
+                <h2>API Endpoints</h2>
+                <div class="endpoint-cards">
+                    <div class="endpoint-card get">
+                        <div class="method">GET</div>
+                        <div class="path">/api/todos</div>
+                        <div class="description">Get all todo items</div>
+                        <button class="btn btn-sm try-btn">Try it</button>
+                    </div>
+
+                    <div class="endpoint-card post">
+                        <div class="method">POST</div>
+                        <div class="path">/api/todos</div>
+                        <div class="description">Create a new todo</div>
+                        <div class="request-input">
+                            <input type="text" id="new-todo-text" placeholder="Enter todo text">
+                            <button class="btn btn-sm send-btn">Send</button>
+                        </div>
+                    </div>
+
+                    <div class="endpoint-card delete">
+                        <div class="method">DELETE</div>
+                        <div class="path">/api/todos/:id</div>
+                        <div class="description">Delete a todo</div>
+                        <div class="request-input">
+                            <input type="number" id="delete-todo-id" placeholder="Enter todo ID">
+                            <button class="btn btn-sm send-btn">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="api-response">
+            <div class="response-header">
+                <h2>API Response</h2>
+                <div class="response-controls">
+                    <select id="filter-select">
+                        <option value="all">All Todos</option>
+                        <option value="completed">Completed</option>
+                        <option value="active">Active</option>
+                    </select>
+                </div>
+            </div>
+            <div class="response-container">
+          <pre id="response-output">{
+  "message": "Interact with the API to see responses here"
+}</pre>
+            </div>
+        </section>
+
+        <section class="todo-list">
+            <h2>Todo Items</h2>
+            <div id="todo-items-container" class="items-container">
+                <!-- Todos will be dynamically inserted here -->
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>Deployed with ❤️ on Vercel | Express.js</p>
+        <p class="version">API v1.0.0</p>
+    </footer>
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,9 +1,21 @@
 {
+  "name": "vercel-express-api",
+  "version": "1.0.0",
+  "description": "A modern Express API deployed on Vercel",
   "type": "module",
+  "main": "api/index.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node api/index.js",
+    "dev": "nodemon api/index.js"
+  },
+  "engines": {
+    "node": ">=16.x"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^5.1.0"
   }
 }
