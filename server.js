@@ -1,199 +1,186 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ES模块兼容性处理
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// 启用 CORS 和 JSON 解析
-app.use(cors());
+// 中间件配置
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// 静态文件托管
-app.use(express.static('public'));
+// 静态文件托管 - 确保路径正确
+const publicPath = path.join(__dirname, '../public');
+app.use(express.static(publicPath));
 
 // 模拟数据库
 let todos = [
-  { id: 1, text: 'Learn Vercel deployment', completed: false },
-  { id: 2, text: 'Build a REST API', completed: true },
-  { id: 3, text: 'Design a beautiful UI', completed: false }
+  { id: 1, text: 'Learn Vercel deployment', completed: false, createdAt: new Date() },
+  { id: 2, text: 'Build a REST API', completed: true, createdAt: new Date(Date.now() - 86400000) },
+  { id: 3, text: 'Design a beautiful UI', completed: false, createdAt: new Date(Date.now() - 172800000) }
 ];
 
 // API 路由
 app.get('/api/todos', (req, res) => {
-  res.json(todos);
+  try {
+    const { completed, q } = req.query;
+    let filteredTodos = [...todos];
+
+    if (completed === 'true') filteredTodos = filteredTodos.filter(todo => todo.completed);
+    if (completed === 'false') filteredTodos = filteredTodos.filter(todo => !todo.completed);
+    if (q) filteredTodos = filteredTodos.filter(todo => todo.text.toLowerCase().includes(q.toLowerCase()));
+
+    res.json({
+      success: true,
+      data: filteredTodos,
+      meta: {
+        total: filteredTodos.length,
+        completed: filteredTodos.filter(todo => todo.completed).length
+      }
+    });
+  } catch (error) {
+    handleError(res, error, 'Failed to fetch todos');
+  }
 });
 
 app.post('/api/todos', (req, res) => {
-  const newTodo = {
-    id: todos.length + 1,
-    text: req.body.text,
-    completed: false
-  };
-  todos.push(newTodo);
-  res.status(201).json(newTodo);
+  try {
+    const { text } = req.body;
+    if (!text?.trim()) return sendError(res, 400, 'Todo text cannot be empty');
+
+    const newTodo = {
+      id: todos.length ? Math.max(...todos.map(t => t.id)) + 1 : 1,
+      text: text.trim(),
+      completed: false,
+      createdAt: new Date()
+    };
+
+    todos.push(newTodo);
+    res.status(201).json({ success: true, data: newTodo });
+  } catch (error) {
+    handleError(res, error, 'Failed to create todo');
+  }
 });
 
 app.delete('/api/todos/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  todos = todos.filter(todo => todo.id !== id);
-  res.status(204).send();
+  try {
+    const id = parseInt(req.params.id);
+    const initialLength = todos.length;
+    
+    todos = todos.filter(todo => todo.id !== id);
+    if (todos.length === initialLength) {
+      return sendError(res, 404, 'Todo not found');
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Todo deleted',
+      remaining: todos.length 
+    });
+  } catch (error) {
+    handleError(res, error, 'Failed to delete todo');
+  }
 });
 
-// 美观的首页
+// 首页路由
 app.get('/', (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Vercel Express API</title>
-      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-      <style>
-        :root {
-          --primary: #4361ee;
-          --secondary: #3f37c9;
-          --light: #f8f9fa;
-          --dark: #212529;
-          --success: #4cc9f0;
-        }
-        
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        
-        body {
-          font-family: 'Poppins', sans-serif;
-          background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-          min-height: 100vh;
-          padding: 2rem;
-          color: var(--dark);
-        }
-        
-        .container {
-          max-width: 1200px;
-          margin: 0 auto;
-          background: rgba(255, 255, 255, 0.9);
-          border-radius: 16px;
-          box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-          backdrop-filter: blur(5px);
-          padding: 2rem;
-        }
-        
-        header {
-          text-align: center;
-          margin-bottom: 2rem;
-        }
-        
-        h1 {
-          color: var(--primary);
-          font-size: 2.5rem;
-          margin-bottom: 0.5rem;
-        }
-        
-        .subtitle {
-          color: #6c757d;
-          font-weight: 300;
-        }
-        
-        .api-section {
-          margin: 2rem 0;
-        }
-        
-        .endpoint {
-          background: white;
-          border-radius: 8px;
-          padding: 1rem;
-          margin-bottom: 1rem;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        
-        .method {
-          display: inline-block;
-          padding: 0.25rem 0.75rem;
-          border-radius: 4px;
-          font-weight: 600;
-          font-size: 0.875rem;
-          margin-right: 0.5rem;
-        }
-        
-        .get { background: #d1e7dd; color: #0f5132; }
-        .post { background: #cfe2ff; color: #084298; }
-        .delete { background: #f8d7da; color: #842029; }
-        
-        .path {
-          font-family: monospace;
-          font-size: 1.1rem;
-        }
-        
-        .description {
-          margin-top: 0.5rem;
-          color: #495057;
-        }
-        
-        .try-button {
-          display: inline-block;
-          margin-top: 1rem;
-          padding: 0.5rem 1rem;
-          background: var(--primary);
-          color: white;
-          text-decoration: none;
-          border-radius: 4px;
-          transition: all 0.3s ease;
-        }
-        
-        .try-button:hover {
-          background: var(--secondary);
-          transform: translateY(-2px);
-        }
-        
-        footer {
-          text-align: center;
-          margin-top: 2rem;
-          color: #6c757d;
-          font-size: 0.875rem;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <header>
-          <h1>Vercel Express API</h1>
-          <p class="subtitle">A modern REST API deployed on Vercel</p>
-        </header>
-        
-        <div class="api-section">
-          <h2>API Endpoints</h2>
-          
-          <div class="endpoint">
-            <span class="method get">GET</span>
-            <span class="path">/api/todos</span>
-            <p class="description">Get all todo items</p>
-            <a href="/api/todos" class="try-button">Try it</a>
-          </div>
-          
-          <div class="endpoint">
-            <span class="method post">POST</span>
-            <span class="path">/api/todos</span>
-            <p class="description">Create a new todo item</p>
-          </div>
-          
-          <div class="endpoint">
-            <span class="method delete">DELETE</span>
-            <span class="path">/api/todos/:id</span>
-            <p class="description">Delete a todo item by ID</p>
-          </div>
-        </div>
-        
-        <footer>
-          <p>Deployed with ❤️ on Vercel | Express.js</p>
-        </footer>
-      </div>
-    </body>
-    </html>
-  `);
+  res.sendFile(path.join(publicPath, 'index.html'), (err) => {
+    if (err) {
+      console.error('Failed to serve index.html:', err);
+      res.status(404).json({
+        success: false,
+        error: 'Frontend not found',
+        hint: 'Make sure public/index.html exists'
+      });
+    }
+  });
 });
 
-// 导出为 Vercel 无服务器函数
+// 健康检查端点
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    time: new Date().toISOString(),
+    todosCount: todos.length 
+  });
+});
+
+// 404 处理
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Endpoint not found',
+    availableEndpoints: [
+      'GET    /',
+      'GET    /api/todos',
+      'POST   /api/todos',
+      'DELETE /api/todos/:id',
+      'GET    /health'
+    ]
+  });
+});
+
+// 错误处理中间件
+app.use((err, req, res, next) => {
+  console.error('Server error:', err.stack);
+  res.status(500).json({
+    success: false,
+    error: 'Internal server error',
+    ...(process.env.NODE_ENV === 'development' && { details: err.message })
+  });
+});
+
+// 辅助函数
+function handleError(res, error, message) {
+  console.error(error);
+  res.status(500).json({ 
+    success: false, 
+    error: message,
+    ...(process.env.NODE_ENV === 'development' && { details: error.message })
+  });
+}
+
+function sendError(res, status, message) {
+  return res.status(status).json({ success: false, error: message });
+}
+
+// 启动服务器
+if (process.env.VERCEL !== '1') {
+  const server = app.listen(PORT, () => {
+    console.log(`
+    ======================
+    🚀 Server is running!
+    ======================
+    Local: http://localhost:${PORT}
+    API Docs:
+    - GET    /api/todos
+    - POST   /api/todos
+    - DELETE /api/todos/:id
+    `);
+    
+    // 开发环境下提示手动访问
+    if (process.env.NODE_ENV === 'development') {
+      console.log('请手动打开浏览器访问以上地址');
+    }
+  });
+
+  // 优雅关闭
+  process.on('SIGTERM', () => {
+    server.close(() => {
+      console.log('Server gracefully closed');
+      process.exit(0);
+    });
+  });
+}
+
 export default app;
